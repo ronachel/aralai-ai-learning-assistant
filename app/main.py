@@ -1,13 +1,22 @@
+import os
 from analytics import load_data, analyze_performance, weakest_subject
 from tutor import explain
 
-df = load_data("../data/sample_student_data.csv")
+# Get absolute path to dataset
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(BASE_DIR, "data", "sample_student_data.csv")
 
-print("📊 Average Scores:")
-print(analyze_performance(df))
+def run():
+    df = load_data(DATA_PATH)
 
-weak = weakest_subject(df)
-print(f"\n⚠️ Weakest Subject: {weak}")
+    print("Average Scores per Subject:")
+    print(analyze_performance(df))
 
-print("\n🤖 AI Explanation:")
-print(explain(weak))
+    weak = weakest_subject(df)
+    print(f"\n⚠️ Weakest Subject: {weak}")
+
+    print("\n AI Recommendation:")
+    print(explain(weak))
+
+if __name__ == "__main__":
+    run()

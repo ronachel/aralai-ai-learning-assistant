@@ -1,6 +1,7 @@
 def explain(topic):
     explanations = {
-        "math": "Math focuses on problem-solving and logic.",
-        "science": "Science explains how the world works.",
+        "Math": "Math requires practice in problem-solving and understanding concepts step by step.",
+        "Science": "Science involves understanding real-world phenomena and applying logic.",
+        "English": "English focuses on comprehension, vocabulary, and communication skills."
     }
-    return explanations.get(topic, "Explanation not available.")
+    return explanations.get(topic, "Focus on practicing this subject consistently.")
