@@ -77,8 +77,8 @@ This enables scalable, individualized learning support that traditional systems 
 
 A working prototype was designed using Figma to simulate the full user experience.
 
-**Figma Prototype:**  
-[PASTE YOUR FIGMA LINK HERE]
+**Prototype:**  
+[Link](https://rock-nail-92377536.figma.site)
 
 ---
 
