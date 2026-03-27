@@ -73,6 +73,20 @@ This enables scalable, individualized learning support that traditional systems 
 
 ---
 
+## Learning Analytics Module
+
+In addition to the AI prototype, this project includes a data analytics component that simulates how student performance can be analyzed.
+
+### Features:
+- Tracks student scores across subjects
+- Identifies weakest areas using data
+- Visualizes performance trends
+- Generates improvement recommendations
+
+This demonstrates how AI systems can be enhanced with data-driven insights to support personalized learning.
+
+---
+
 ## Prototype
 
 A working prototype was designed using Figma to simulate the full user experience.
