@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="YOUR-BANNER-IMAGE-LINK" width="100%" />
+  <img src="insert banner hereeee" width="100%" />
 </p>
 
 # AralAI — AI Learning Assistant for ASEAN Students
@@ -12,11 +12,11 @@ AralAI is a localized, low-bandwidth AI-powered learning assistant designed to i
 
 Across ASEAN, many students struggle with foundational mathematics due to:
 
-- Overcrowded classrooms  
-- Lack of personalized support  
-- Language barriers (e.g., English vs. Taglish)  
-- Limited access to tutoring  
-- Socioeconomic and digital inequalities  
+- Overcrowded classrooms
+- Lack of personalized support
+- Language barriers (e.g., English vs. Taglish)
+- Limited access to tutoring
+- Socioeconomic and digital inequalities
 
 Research shows that math-related programs can have dropout rates as high as **58%**, with most students showing early warning signs before disengaging (Heusel et al., 2023).
 
@@ -26,25 +26,25 @@ Research shows that math-related programs can have dropout rates as high as **58
 
 AralAI provides an AI-powered learning experience that is:
 
-- **Personalized** — Adapts to each student’s pace and level  
-- **Intelligent** — Detects mistakes and explains solutions step-by-step  
-- **Localized** — Uses familiar language (e.g., Taglish)  
-- **Accessible** — Optimized for mobile and low-bandwidth environments  
-- **Relevant** — Connects math learning to real-world careers  
+- **Personalized** — Adapts to each student's pace and level
+- **Intelligent** — Detects mistakes and explains solutions step-by-step
+- **Localized** — Uses familiar language (e.g., Taglish)
+- **Accessible** — Optimized for mobile and low-bandwidth environments
+- **Relevant** — Connects math learning to real-world careers
 
 ---
 
 ## Core Features
 
 ### 1. AI Math Assistant
-- Step-by-step problem solving  
-- Simplified explanations  
-- Real-life analogies  
+- Step-by-step problem solving
+- Simplified explanations
+- Real-life analogies
 
 ### 2. Adaptive Learning System
-- Tracks progress  
-- Identifies weak areas  
-- Recommends targeted practice  
+- Tracks progress
+- Identifies weak areas
+- Recommends targeted practice
 
 ### 3. Mistake Detection
 - Detects errors in student solutions  

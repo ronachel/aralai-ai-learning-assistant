@@ -1,3 +1,7 @@
 pandas
-matplotlib
+scikit-learn
+joblib
 streamlit
+fastapi
+python-dotenv
+google-generativeai
