@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import pandas as pd
 import google.generativeai as genai
 
 def get_key_from_env():
@@ -20,7 +22,121 @@ def get_key_from_env():
 
     return None
 
-def generate_recommendation(subject, score, student_data=None):
+def _compute_score_trend(df):
+    if "date" not in df.columns or "score" not in df.columns or df.empty:
+        return "stable"
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date", "score"])
+    if len(df) < 2:
+        return "stable"
+    x = (df["date"] - df["date"].min()).dt.days.astype(float)
+    y = df["score"].astype(float)
+    if len(x) < 2:
+        return "stable"
+    slope = np.polyfit(x, y, 1)[0]
+    return "improving" if slope > 0.05 else "declining" if slope < -0.05 else "stable"
+
+
+def generate_study_plan(subject, risk_level, avg_score, student_df=None, low_resource=False):
+    score_trend = _compute_score_trend(student_df) if student_df is not None else "stable"
+    time_score_corr = None
+    if student_df is not None and "time_spent_minutes" in student_df.columns and "score" in student_df.columns:
+        time_score_corr = student_df["time_spent_minutes"].corr(student_df["score"])
+
+    weakest_explanation = f"Weakest subject is {subject}, with consistent lower scores versus other fields." if subject else "Weakest subject data is limited."
+
+    def _basic_plan():
+        insight = (
+            f"Score trend: {score_trend}. {weakest_explanation} "
+            f"Current average score is {avg_score:.1f}. "
+            f"Study time correlation with score is {'positive' if time_score_corr is None or time_score_corr >= 0 else 'negative'}."
+        )
+        steps = [
+            "1. Focus on your weakest subject with targeted practice and review.",
+            "2. Keep daily study sessions short with active recall and spaced repetition.",
+            "3. Granularly track progress and adjust topics every week.",
+            "4. Pair content practice with timed quizzes to build confidence.",
+            "5. Reflect on errors and prioritize concepts with low accuracy.",
+        ]
+        return f"{insight}\n\n" + "\n".join(steps[:5])
+
+    if low_resource or not get_key_from_env():
+        return "⚠️ AI unavailable (low-resource or no key). Using basic fallback plan." + "\n\n" + _basic_plan()
+
+    api_key = get_key_from_env()
+    if not api_key:
+        return "⚠️ AI Error: GEMINI_API_KEY not found. Set it in environment or .env file in project root."
+
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+
+        corr_text = f"{time_score_corr:.2f}" if time_score_corr is not None else "unknown"
+        prompt = f"""You are an expert educational psychologist and personalized learning specialist.
+
+Student data:
+- Subject: {subject}
+- Risk level: {risk_level}
+- Average score: {avg_score:.1f}
+- Trend: {score_trend}
+- Weakest subject: {weakest_explanation}
+- Time-vs-score correlation: {corr_text}
+
+Please provide:
+1) short paragraph insight
+2) 3-5 bullet-point actionable steps tied to this student's data
+"""
+
+        response = model.generate_content(prompt)
+        response_text = (response.text or "").strip()
+        if not response_text:
+            return "⚠️ AI Error: Empty response from Gemini model. Using fallback plan.\n\n" + _basic_plan()
+
+        return response_text
+
+    except Exception as e:
+        return f"⚠️ AI Connection Error: {str(e)}. Using fallback plan.\n\n" + _basic_plan()
+
+
+def explain_student_performance(student_df):
+    if student_df is None or student_df.empty:
+        return "Not enough data to explain student performance."
+
+    trend = _compute_score_trend(student_df)
+    difficulty_score = None
+    if "difficulty_level" in student_df.columns and "score" in student_df.columns:
+        difficulty_score = student_df.groupby("difficulty_level")["score"].mean().to_dict()
+
+    time_corr = None
+    if "time_spent_minutes" in student_df.columns and "score" in student_df.columns:
+        time_corr = student_df["time_spent_minutes"].corr(student_df["score"])
+
+    explanation = [f"The student's score trend is {trend}."]
+
+    if time_corr is not None:
+        if time_corr > 0.2:
+            explanation.append("Study time has positive correlation with score, indicating effort helps.")
+        elif time_corr < -0.1:
+            explanation.append("Study time is negatively correlated with score, which may indicate inefficient study habits.")
+        else:
+            explanation.append("Study time has weak correlation with score, suggesting method quality matters more.")
+
+    if difficulty_score:
+        sorted_diff = sorted(difficulty_score.items(), key=lambda item: item[1])
+        formatted_diff = ", ".join([f"{level}: {score:.1f}" for level, score in sorted_diff])
+        explanation.append(f"Average score by difficulty – {formatted_diff}.")
+
+    if trend == "declining":
+        explanation.append("Despite effort, performance is declining; focus on fundamentals and active practice.")
+
+    if trend == "improving":
+        explanation.append("Performance is improving, keep the current approach with incremental adjustments.")
+
+    return " ".join(explanation)
+
+
+def generate_learning_path(subject, risk_level):
     api_key = get_key_from_env()
 
     if not api_key:
@@ -30,42 +146,47 @@ def generate_recommendation(subject, score, student_data=None):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-2.5-flash')
 
-        profile_info = ""
-        if student_data is not None:
-            avg_score_all = student_data['score'].mean()
-            total_time = student_data['time_spent_minutes'].sum()
-            subjects_count = len(student_data['subject'].unique())
+        prompt = f"""You are an expert learning experience designer.
 
-            subject_data = student_data[student_data['subject'] == subject]
-            subject_avg_time = subject_data['time_spent_minutes'].mean() if not subject_data.empty else 0
-            subject_difficulty = subject_data['difficulty_level'].mode().iloc[0] if not subject_data.empty else "Unknown"
+The student needs a learning path for {subject} with risk level {risk_level}.
 
-            other_subjects = student_data[student_data['subject'] != subject]
-            other_avg = other_subjects['score'].mean() if not other_subjects.empty else score
+Provide a 3-week structured plan with actionable steps:
+- Week 1
+- Week 2
+- Week 3
 
-            profile_info = f"""
-Student Performance Profile:
-- Overall average score: {avg_score_all:.1f}/100 across {subjects_count} subjects
-- Total study time: {total_time} minutes across all subjects
-- {subject} specific: {score:.1f}/100 score, {subject_avg_time:.0f} min average study time, {subject_difficulty} difficulty
-- Performance vs other subjects: {'above' if score > other_avg else 'below'} average ({other_avg:.1f})
+Keep it concise and practical.
 """
 
-        prompt = f"""You are an expert educational psychologist and personalized learning specialist.
+        response = model.generate_content(prompt)
+        response_text = (response.text or "").strip()
+        if not response_text:
+            return "⚠️ AI Error: Empty response from Gemini model."
 
-{profile_info}
+        return response_text
 
-The student needs improvement in {subject} where they scored {score:.1f}/100.
+    except Exception as e:
+        return f"⚠️ AI Connection Error: {str(e)}"
 
-Provide a highly personalized, actionable study plan that includes:
 
-1. **Specific Learning Strategy**: Based on their current performance level and difficulty perception
-2. **Time Management**: Realistic daily/weekly schedule considering their current study habits
-3. **Targeted Resources**: Specific tools/apps/books that match their learning style and current level
-4. **Progress Tracking**: Concrete ways to measure improvement and stay motivated
-5. **Common Pitfalls**: Address potential challenges based on their performance patterns
+def tutor_chat(user_question):
+    api_key = get_key_from_env()
 
-Make this recommendation feel personal, encouraging, and immediately actionable. Keep it to 3-4 sentences maximum.
+    if not api_key:
+        return "⚠️ AI Error: GEMINI_API_KEY not found. Set it in environment or .env file in project root."
+
+    if not user_question or not user_question.strip():
+        return "Please enter a question for the tutor."
+
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+
+        prompt = f"""You are a knowledgeable study coach.
+
+User question: {user_question}
+
+Provide a clear, friendly explanation with practical steps.
 """
 
         response = model.generate_content(prompt)

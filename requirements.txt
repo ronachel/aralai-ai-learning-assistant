@@ -5,3 +5,4 @@ streamlit
 fastapi
 python-dotenv
 google-generativeai
+reportlab
